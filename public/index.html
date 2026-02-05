@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TakasApp | Sürdürülebilir Moda</title>
+    <link rel="icon" type="image/png" href="/logo.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap'); body { font-family: 'Plus Jakarta Sans', sans-serif; }</style>
+</head>
+<body class="bg-slate-50 min-h-screen text-slate-800">
+
+    <nav class="bg-indigo-700 p-4 text-white shadow-xl sticky top-0 z-50">
+        <div class="container mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-3 cursor-pointer" onclick="location.reload()">
+                <img src="/logo.png" alt="Logo" class="h-10 w-10 object-contain rounded-lg bg-white p-1" onerror="this.src='https://cdn-icons-png.flaticon.com/512/3081/3081840.png'">
+                <h1 class="text-2xl font-extrabold tracking-tighter uppercase">TAKASAPP</h1>
+            </div>
+            <div id="nav-right" class="flex gap-4 items-center"></div>
+        </div>
+    </nav>
+
+    <main class="container mx-auto p-6">
+        <div id="auth-screen" class="hidden max-w-md mx-auto bg-white p-10 rounded-3xl shadow-2xl mt-16 border border-slate-100">
+            <h2 id="auth-title" class="text-3xl font-extrabold mb-8 text-center text-slate-800 border-b pb-4">Giriş Yap</h2>
+            <input type="text" id="username" placeholder="Kullanıcı Adı" class="w-full p-4 mb-4 border rounded-2xl outline-none focus:ring-2 focus:ring-indigo-500 bg-slate-50">
+            <input type="password" id="password" placeholder="Şifre" class="w-full p-4 mb-8 border rounded-2xl outline-none focus:ring-2 focus:ring-indigo-500 bg-slate-50">
+            <button onclick="handleAuth()" id="auth-btn" class="w-full bg-indigo-600 text-white py-4 rounded-2xl font-bold hover:bg-indigo-700 transition shadow-lg hover:shadow-indigo-500/30">Giriş Yap</button>
+            <p class="text-center mt-6 text-slate-500 text-sm font-semibold">Hesabın yok mu? <a href="#" onclick="toggleAuthMode()" class="text-indigo-600 font-bold hover:underline">Kayıt Ol</a></p>
+        </div>
+
+        <div id="main-content" class="hidden">
+            <div class="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
+                <h2 class="text-3xl font-extrabold text-slate-800">Vitrin</h2>
+                <span class="text-sm bg-slate-200 px-3 py-1 rounded-full text-slate-600 font-bold">♻️ Sürdürülebilir Gelecek</span>
+            </div>
+            <div id="grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8"></div>
+        </div>
+    </main>
+
+    <div id="modal" class="fixed inset-0 bg-slate-900/60 hidden flex items-center justify-center p-4 z-[60] backdrop-blur-md">
+        <div class="bg-white p-8 rounded-3xl w-full max-w-lg shadow-2xl animate-[fadeIn_0.2s_ease-out]">
+            <h2 class="text-2xl font-bold mb-6 text-slate-800 flex items-center gap-2">✨ Yeni İlan</h2>
+            <input type="text" id="baslik" placeholder="Ürün Başlığı" class="w-full p-4 mb-4 border rounded-2xl outline-none focus:ring-2 focus:ring-indigo-500">
+            
+            <div class="flex gap-4 mb-6">
+                <select id="beden" class="flex-1 p-4 border rounded-2xl outline-none bg-white cursor-pointer">
+                    <option value="S">Beden: S</option><option value="M">Beden: M</option><option value="L">Beden: L</option><option value="XL">Beden: XL</option>
+                </select>
+                <select id="type" class="flex-1 p-4 border rounded-2xl outline-none bg-white font-bold cursor-pointer">
+                    <option value="takas">🔄 Takaslık</option>
+                    <option value="bagis">🎁 Bağışlık</option>
+                </select>
+            </div>
+            
+            <label class="block mb-2 text-xs font-bold text-slate-400 uppercase tracking-widest">Fotoğraf (Opsiyonel)</label>
+            <input type="file" id="fileInput" class="mb-8 block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 cursor-pointer">
+            
+            <button onclick="urunKaydet()" class="w-full bg-indigo-600 text-white py-4 rounded-2xl font-bold shadow-lg hover:bg-indigo-700 transition">Yayınla</button>
+            <button onclick="toggleModal()" class="w-full mt-3 text-slate-400 text-sm font-semibold hover:text-slate-600">Vazgeç</button>
+        </div>
+    </div>
+
+    <div id="mailbox-modal" class="fixed inset-0 bg-slate-900/60 hidden flex items-center justify-center p-4 z-[60] backdrop-blur-md">
+        <div class="bg-white p-8 rounded-3xl w-full max-w-md shadow-2xl">
+            <h2 class="text-2xl font-bold mb-6 flex items-center gap-2 text-indigo-700">📬 Mesaj Kutusu</h2>
+            <div id="offers-list" class="space-y-3 max-h-96 overflow-y-auto pr-2 custom-scrollbar"></div>
+            <button onclick="toggleMailbox()" class="w-full mt-6 py-4 bg-slate-100 rounded-2xl font-bold text-slate-600 hover:bg-slate-200">Kapat</button>
+        </div>
+    </div>
+
+    <script>
+        let currentUser = null;
+        let isLoginMode = true;
+
+        // OTURUM KONTROLÜ (Sayfa Yüklenince)
+        window.onload = () => {
+            const savedUser = localStorage.getItem('user');
+            if (savedUser) {
+                currentUser = JSON.parse(savedUser);
+                document.getElementById('auth-screen').classList.add('hidden');
+                document.getElementById('main-content').classList.remove('hidden');
+                renderNav();
+                urunleriGetir();
+                checkOffers();
+            } else {
+                document.getElementById('auth-screen').classList.remove('hidden');
+            }
+        };
+
+        // NAVBAR Render
+        function renderNav() {
+            document.getElementById('nav-right').innerHTML = `
+                <div class="relative cursor-pointer hover:scale-110 transition p-2 group" onclick="toggleMailbox()">
+                    <svg class="text-indigo-100 group-hover:text-white" width="28" height="28" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><path d="M22 6l-10 7L2 6"/></svg>
+                    <span id="notif-dot" class="absolute top-1 right-1 h-3.5 w-3.5 bg-red-500 rounded-full border-2 border-indigo-700 hidden animate-pulse"></span>
+                </div>
+                <button onclick="toggleModal()" class="bg-white text-indigo-700 px-6 py-2 rounded-2xl font-extrabold text-xs tracking-widest hover:shadow-lg transition transform hover:-translate-y-0.5">İLAN VER</button>
+                <button onclick="logout()" class="text-indigo-300 hover:text-white transition ml-2"><svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg></button>
+            `;
+        }
+
+        // AUTH İşlemleri
+        async function handleAuth() {
+            const u = document.getElementById('username').value;
+            const p = document.getElementById('password').value;
+            const res = await fetch(isLoginMode ? '/api/login' : '/api/register', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ username: u, password: p })
+            });
+            if (res.ok) {
+                if(isLoginMode) {
+                    currentUser = await res.json();
+                    localStorage.setItem('user', JSON.stringify(currentUser)); // Kalıcı oturum
+                    location.reload();
+                } else { alert("Kayıt başarılı! Giriş yapabilirsiniz."); toggleAuthMode(); }
+            } else alert("İşlem başarısız. Bilgileri kontrol edin.");
+        }
+
+        // Ürünleri Listeleme
+        async function urunleriGetir() {
+            const res = await fetch('/api/products');
+            const data = await res.json();
+            document.getElementById('grid').innerHTML = data.map(u => {
+                const isMine = u.user_id === currentUser.id;
+                const isAdmin = currentUser.role === 'admin';
+                const isBagis = u.type === 'bagis';
+                
+                return `
+                <div class="bg-white rounded-[2rem] overflow-hidden shadow-sm hover:shadow-2xl transition-all duration-500 border border-slate-100 group relative">
+                    <div class="relative overflow-hidden h-64 bg-gray-100">
+                        <img src="${u.img_url}" class="h-full w-full object-cover group-hover:scale-110 transition duration-700" onerror="this.src='https://images.unsplash.com/photo-1523381210434-271e8be1f52b?w=500'">
+                        <div class="absolute top-4 left-4 ${isBagis ? 'bg-green-500' : 'bg-indigo-600'} text-white px-3 py-1 rounded-full text-[10px] font-black shadow-lg uppercase tracking-wider">
+                            ${isBagis ? '🎁 BAĞIŞ' : u.size}
+                        </div>
+                        ${isMine ? '<div class="absolute top-4 right-4 bg-white/90 px-2 py-1 rounded-lg text-[10px] font-bold text-slate-600">Senin İlanın</div>' : ''}
+                    </div>
+                    <div class="p-6">
+                        <h3 class="font-bold text-slate-800 text-lg mb-1 truncate">${u.title}</h3>
+                        <p class="text-slate-400 text-[10px] mb-6 uppercase tracking-widest font-bold">@${u.username}</p>
+                        <div class="flex gap-2">
+                            ${isMine 
+                                ? `<button onclick="ilanSil(${u.id})" class="flex-1 bg-red-50 text-red-500 py-3 rounded-2xl font-bold text-[10px] uppercase hover:bg-red-500 hover:text-white transition">İlanımı Kaldır</button>`
+                                : `<button onclick="takasIste(${u.id}, ${u.user_id})" class="flex-1 ${isBagis ? 'bg-green-600 hover:bg-green-700' : 'bg-indigo-600 hover:bg-indigo-700'} text-white py-3 rounded-2xl font-bold text-[10px] transition uppercase shadow-md hover:shadow-lg">
+                                    ${isBagis ? '🎁 Talep Et' : '🔄 Takas İste'}
+                                   </button>`
+                            }
+                            ${(isAdmin && !isMine) ? `<button onclick="ilanSil(${u.id})" class="bg-slate-800 text-white px-4 rounded-2xl font-bold text-xs hover:bg-black" title="Admin Sil">🗑️</button>` : ''}
+                        </div>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        // Ürün Ekleme
+        async function urunKaydet() {
+            const fileInput = document.getElementById('fileInput');
+            let finalImgUrl = "";
+            if (fileInput.files[0]) {
+                const formData = new FormData();
+                formData.append('image', fileInput.files[0]);
+                const upRes = await fetch('/api/upload', { method: 'POST', body: formData });
+                const upData = await upRes.json();
+                finalImgUrl = upData.filePath;
+            }
+            await fetch('/api/products', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ 
+                    user_id: currentUser.id, 
+                    title: document.getElementById('baslik').value, 
+                    size: document.getElementById('beden').value, 
+                    img_url: finalImgUrl, 
+                    type: document.getElementById('type').value 
+                })
+            });
+            location.reload();
+        }
+
+        // İlan Silme (Sahiplik Kontrollü)
+        async function ilanSil(id) {
+            if(!confirm("İlanı silmek istediğine emin misin?")) return;
+            const res = await fetch(`/api/products/${id}`, {
+                method: 'DELETE',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ user_id: currentUser.id }) // Kimin sildiğini gönder
+            });
+            if(res.ok) location.reload(); else alert("Silme yetkiniz yok!");
+        }
+
+        // İstek Gönderme
+        async function takasIste(pId, rId) {
+            await fetch('/api/offers', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ product_id: pId, sender_id: currentUser.id, receiver_id: rId }) });
+            alert("İsteğin sahibine iletildi!");
+        }
+
+        // Gelen Kutusu
+        async function toggleMailbox() {
+            const modal = document.getElementById('mailbox-modal');
+            modal.classList.toggle('hidden');
+            if(!modal.classList.contains('hidden')) {
+                const res = await fetch(`/api/offers/${currentUser.id}`);
+                const data = await res.json();
+                document.getElementById('offers-list').innerHTML = data.length ? data.map(o => `
+                    <div class="p-4 rounded-2xl border ${o.product_type === 'bagis' ? 'border-green-200 bg-green-50' : 'border-indigo-100 bg-indigo-50'} transition hover:scale-[1.02]">
+                        <p class="text-[10px] font-black ${o.product_type === 'bagis' ? 'text-green-600' : 'text-indigo-600'} uppercase mb-1 flex items-center gap-1">
+                            ${o.product_type === 'bagis' ? '🎁 BAĞIŞ TALEBİ' : '🔄 TAKAS İSTEĞİ'}
+                        </p>
+                        <p class="text-xs text-slate-700 leading-relaxed">
+                            <span class="font-bold text-slate-900">@${o.sender_name}</span> kullanıcısı, 
+                            "<span class="italic">${o.product_name}</span>" ilanına talip oldu.
+                        </p>
+                    </div>
+                `).join('') : "<div class='flex flex-col items-center justify-center py-10 opacity-50'><span class='text-4xl'>📭</span><p class='text-sm mt-2'>Kutun boş.</p></div>";
+                document.getElementById('notif-dot').classList.add('hidden');
+            }
+        }
+
+        async function checkOffers() {
+            const res = await fetch(`/api/offers/${currentUser.id}`);
+            const data = await res.json();
+            if(data.length > 0) document.getElementById('notif-dot').classList.remove('hidden');
+        }
+
+        function logout() { localStorage.removeItem('user'); location.reload(); }
+        function toggleAuthMode() { isLoginMode = !isLoginMode; document.getElementById('auth-title').innerText = isLoginMode ? "Giriş Yap" : "Kayıt Ol"; document.getElementById('auth-btn').innerText = isLoginMode ? "Giriş Yap" : "Kayıt Ol"; }
+        function toggleModal() { document.getElementById('modal').classList.toggle('hidden'); }
+    </script>
+</body>
+</html>

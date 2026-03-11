@@ -196,3 +196,28 @@
                 const data = await res.json();
                 document.getElementById('offers-list').innerHTML = data.length ? data.map(o => `
                     <div class="p-4 rounded-2xl border ${o.product_type === 'bagis' ? 'border-green-200 bg-green-50' : 'border-indigo-100 bg-indigo-50'} transition hover:scale-[1.02]">
+                        <p class="text-[10px] font-black ${o.product_type === 'bagis' ? 'text-green-600' : 'text-indigo-600'} uppercase mb-1 flex items-center gap-1">
+                            ${o.product_type === 'bagis' ? '🎁 BAĞIŞ TALEBİ' : '🔄 TAKAS İSTEĞİ'}
+                        </p>
+                        <p class="text-xs text-slate-700 leading-relaxed">
+                            <span class="font-bold text-slate-900">@${o.sender_name}</span> kullanıcısı, 
+                            "<span class="italic">${o.product_name}</span>" ilanına talip oldu.
+                        </p>
+                    </div>
+                `).join('') : "<div class='flex flex-col items-center justify-center py-10 opacity-50'><span class='text-4xl'>📭</span><p class='text-sm mt-2'>Kutun boş.</p></div>";
+                document.getElementById('notif-dot').classList.add('hidden');
+            }
+        }
+
+        async function checkOffers() {
+            const res = await fetch(`/api/offers/${currentUser.id}`);
+            const data = await res.json();
+            if(data.length > 0) document.getElementById('notif-dot').classList.remove('hidden');
+        }
+
+        function logout() { localStorage.removeItem('user'); location.reload(); }
+        function toggleAuthMode() { isLoginMode = !isLoginMode; document.getElementById('auth-title').innerText = isLoginMode ? "Giriş Yap" : "Kayıt Ol"; document.getElementById('auth-btn').innerText = isLoginMode ? "Giriş Yap" : "Kayıt Ol"; }
+        function toggleModal() { document.getElementById('modal').classList.toggle('hidden'); }
+    </script>
+</body>
+</html>

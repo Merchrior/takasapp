@@ -39,7 +39,7 @@
     </main>
 
     <div id="modal" class="fixed inset-0 bg-slate-900/60 hidden flex items-center justify-center p-4 z-[60] backdrop-blur-md">
-        <div class="bg-white p-8 rounded-3xl w-full max-w-lg shadow-2xl animate-[fadeIn_0.2s_ease-out]">
+        <div class="bg-white p-8 rounded-3xl w-full max-w-lg shadow-2xl">
             <h2 class="text-2xl font-bold mb-6 text-slate-800 flex items-center gap-2">✨ Yeni İlan</h2>
             <input type="text" id="baslik" placeholder="Ürün Başlığı" class="w-full p-4 mb-4 border rounded-2xl outline-none focus:ring-2 focus:ring-indigo-500">
             
@@ -73,7 +73,6 @@
         let currentUser = null;
         let isLoginMode = true;
 
-        // OTURUM KONTROLÜ (Sayfa Yüklenince)
         window.onload = () => {
             const savedUser = localStorage.getItem('user');
             if (savedUser) {
@@ -88,7 +87,6 @@
             }
         };
 
-        // NAVBAR Render
         function renderNav() {
             document.getElementById('nav-right').innerHTML = `
                 <div class="relative cursor-pointer hover:scale-110 transition p-2 group" onclick="toggleMailbox()">
@@ -100,7 +98,6 @@
             `;
         }
 
-        // AUTH İşlemleri
         async function handleAuth() {
             const u = document.getElementById('username').value;
             const p = document.getElementById('password').value;
@@ -112,13 +109,12 @@
             if (res.ok) {
                 if(isLoginMode) {
                     currentUser = await res.json();
-                    localStorage.setItem('user', JSON.stringify(currentUser)); // Kalıcı oturum
+                    localStorage.setItem('user', JSON.stringify(currentUser));
                     location.reload();
                 } else { alert("Kayıt başarılı! Giriş yapabilirsiniz."); toggleAuthMode(); }
             } else alert("İşlem başarısız. Bilgileri kontrol edin.");
         }
 
-        // Ürünleri Listeleme
         async function urunleriGetir() {
             const res = await fetch('/api/products');
             const data = await res.json();
@@ -153,7 +149,6 @@
             }).join('');
         }
 
-        // Ürün Ekleme
         async function urunKaydet() {
             const fileInput = document.getElementById('fileInput');
             let finalImgUrl = "";
@@ -178,24 +173,21 @@
             location.reload();
         }
 
-        // İlan Silme (Sahiplik Kontrollü)
         async function ilanSil(id) {
             if(!confirm("İlanı silmek istediğine emin misin?")) return;
             const res = await fetch(`/api/products/${id}`, {
                 method: 'DELETE',
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ user_id: currentUser.id }) // Kimin sildiğini gönder
+                body: JSON.stringify({ user_id: currentUser.id })
             });
             if(res.ok) location.reload(); else alert("Silme yetkiniz yok!");
         }
 
-        // İstek Gönderme
         async function takasIste(pId, rId) {
             await fetch('/api/offers', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ product_id: pId, sender_id: currentUser.id, receiver_id: rId }) });
             alert("İsteğin sahibine iletildi!");
         }
 
-        // Gelen Kutusu
         async function toggleMailbox() {
             const modal = document.getElementById('mailbox-modal');
             modal.classList.toggle('hidden');
@@ -204,28 +196,3 @@
                 const data = await res.json();
                 document.getElementById('offers-list').innerHTML = data.length ? data.map(o => `
                     <div class="p-4 rounded-2xl border ${o.product_type === 'bagis' ? 'border-green-200 bg-green-50' : 'border-indigo-100 bg-indigo-50'} transition hover:scale-[1.02]">
-                        <p class="text-[10px] font-black ${o.product_type === 'bagis' ? 'text-green-600' : 'text-indigo-600'} uppercase mb-1 flex items-center gap-1">
-                            ${o.product_type === 'bagis' ? '🎁 BAĞIŞ TALEBİ' : '🔄 TAKAS İSTEĞİ'}
-                        </p>
-                        <p class="text-xs text-slate-700 leading-relaxed">
-                            <span class="font-bold text-slate-900">@${o.sender_name}</span> kullanıcısı, 
-                            "<span class="italic">${o.product_name}</span>" ilanına talip oldu.
-                        </p>
-                    </div>
-                `).join('') : "<div class='flex flex-col items-center justify-center py-10 opacity-50'><span class='text-4xl'>📭</span><p class='text-sm mt-2'>Kutun boş.</p></div>";
-                document.getElementById('notif-dot').classList.add('hidden');
-            }
-        }
-
-        async function checkOffers() {
-            const res = await fetch(`/api/offers/${currentUser.id}`);
-            const data = await res.json();
-            if(data.length > 0) document.getElementById('notif-dot').classList.remove('hidden');
-        }
-
-        function logout() { localStorage.removeItem('user'); location.reload(); }
-        function toggleAuthMode() { isLoginMode = !isLoginMode; document.getElementById('auth-title').innerText = isLoginMode ? "Giriş Yap" : "Kayıt Ol"; document.getElementById('auth-btn').innerText = isLoginMode ? "Giriş Yap" : "Kayıt Ol"; }
-        function toggleModal() { document.getElementById('modal').classList.toggle('hidden'); }
-    </script>
-</body>
-</html>

@@ -6,17 +6,26 @@ const path = require('path');
 const fs = require('fs');
 
 const app = express();
-// Veritabanı dosyasını proje klasörüne sabitliyoruz (Silinmemesi için)
-const dbPath = path.join(__dirname, 'takas_app_final.db');
+
+// --- KALICI DİSK (PERSISTENT STORAGE) AYARI ---
+// Render, sunucuda çalışırken 'RENDER' değişkenini otomatik true yapar.
+// Render'daysan /data diskini, bilgisayarındaysan mevcut klasörü kullanır.
+const diskPath = process.env.RENDER ? '/data' : __dirname;
+
+// 1. Veritabanı Yolu
+const dbPath = path.join(diskPath, 'takas_app_kalici.db');
 const db = new sqlite3.Database(dbPath);
 
-// Upload klasörü kontrolü
-const uploadDir = path.join(__dirname, 'public', 'uploads');
+// 2. Resim Yükleme Klasörü Yolu
+const uploadDir = path.join(diskPath, 'uploads');
 if (!fs.existsSync(uploadDir)) {
     fs.mkdirSync(uploadDir, { recursive: true });
 }
 
-// Resim Yükleme Ayarları
+console.log(`Veritabanı yolu: ${dbPath}`);
+console.log(`Resimlerin yükleneceği klasör: ${uploadDir}`);
+
+// Multer (Resim Yükleyici) Ayarı
 const storage = multer.diskStorage({
     destination: uploadDir,
     filename: (req, file, cb) => {
@@ -26,9 +35,13 @@ const storage = multer.diskStorage({
 const upload = multer({ storage: storage });
 
 app.use(bodyParser.json());
-app.use(express.static('public'));
 
-// Veritabanı Tabloları
+// Arayüz dosyalarını (HTML, CSS, JS) public klasöründen sun
+app.use(express.static('public'));
+// Kalıcı diskteki resimleri tarayıcıya sunmak için sanal bir '/uploads' rotası oluştur
+app.use('/uploads', express.static(uploadDir));
+
+// --- VERİTABANI ŞEMASI ---
 db.serialize(() => {
     db.run(`CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT UNIQUE, password TEXT, role TEXT DEFAULT 'user')`);
     db.run(`CREATE TABLE IF NOT EXISTS products (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, title TEXT, size TEXT, img_url TEXT, type TEXT DEFAULT 'takas')`);
@@ -37,7 +50,7 @@ db.serialize(() => {
 
 // --- API UÇLARI ---
 
-// Kayıt Ol (İlk kullanıcı Admin olur)
+// Kayıt Ol
 app.post('/api/register', (req, res) => {
     const { username, password } = req.body;
     db.get("SELECT count(*) as count FROM users", (err, row) => {
@@ -62,10 +75,11 @@ app.post('/api/upload', upload.single('image'), (req, res) => {
     res.json({ filePath: `/uploads/${req.file.filename}` });
 });
 
-// Ürün Ekle (Default resim destekli)
+// Ürün Ekle
 app.post('/api/products', (req, res) => {
     let { user_id, title, size, img_url, type } = req.body;
-    if (!img_url || img_url.trim() === "") img_url = "https://images.unsplash.com/photo-1523381210434-271e8be1f52b?w=500"; // Default kıyafet resmi
+    // Resim seçilmezse Unsplash'ten default bir kıyafet resmi ata
+    if (!img_url || img_url.trim() === "") img_url = "https://images.unsplash.com/photo-1523381210434-271e8be1f52b?w=500";
     
     db.run("INSERT INTO products (user_id, title, size, img_url, type) VALUES (?, ?, ?, ?, ?)", 
     [user_id, title, size, img_url, type], () => res.json({ ok: true }));
@@ -76,20 +90,17 @@ app.get('/api/products', (req, res) => {
     db.all("SELECT p.*, u.username FROM products p JOIN users u ON p.user_id = u.id ORDER BY p.id DESC", (err, rows) => res.json(rows || []));
 });
 
-// Ürün Sil (GÜVENLİK KONTROLLÜ)
+// Ürün Sil (Sahiplik ve Admin Kontrollü)
 app.delete('/api/products/:id', (req, res) => {
     const productId = req.params.id;
-    const { user_id } = req.body; // Silme isteğini gönderen kişi
+    const { user_id } = req.body;
 
-    // 1. Ürünü bul
     db.get("SELECT user_id FROM products WHERE id = ?", [productId], (err, product) => {
         if (!product) return res.status(404).send("Ürün yok");
 
-        // 2. Kullanıcıyı bul (Admin mi diye bakmak için)
         db.get("SELECT role FROM users WHERE id = ?", [user_id], (err, user) => {
             if (!user) return res.status(403).send("Kullanıcı yok");
 
-            // 3. KONTROL: Kullanıcı admin mi VEYA ürünün sahibi mi?
             if (user.role === 'admin' || product.user_id === parseInt(user_id)) {
                 db.run("DELETE FROM products WHERE id = ?", [productId], () => res.json({ ok: true }));
             } else {
@@ -99,7 +110,7 @@ app.delete('/api/products/:id', (req, res) => {
     });
 });
 
-// Takas/Bağış İsteği Gönder
+// Teklif Gönder
 app.post('/api/offers', (req, res) => {
     const { product_id, sender_id, receiver_id } = req.body;
     db.run("INSERT INTO offers (product_id, sender_id, receiver_id) VALUES (?, ?, ?)", [product_id, sender_id, receiver_id], () => res.json({ ok: true }));
@@ -114,5 +125,6 @@ app.get('/api/offers/:user_id', (req, res) => {
     db.all(sql, [req.params.user_id], (err, rows) => res.json(rows || []));
 });
 
+// Port Ayarı (Render PORT çevresel değişkenini kendi belirler)
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Sunucu çalışıyor: http://localhost:${PORT}`));
+app.listen(PORT, '0.0.0.0', () => console.log(`Sunucu aktif: http://localhost:${PORT}`));

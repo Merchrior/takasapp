@@ -22,56 +22,100 @@
 
     <main class="container mx-auto p-6">
         <div id="auth-screen" class="hidden max-w-md mx-auto bg-white p-10 rounded-3xl shadow-2xl mt-16 border border-slate-100">
-            <h2 id="auth-title" class="text-3xl font-extrabold mb-8 text-center text-slate-800 border-b pb-4">Giriş Yap</h2>
+            <h2 id="auth-title" class="text-3xl font-extrabold mb-8 text-center text-slate-800 border-b pb-4 text-indigo-600">Hoş Geldiniz</h2>
             <input type="text" id="username" placeholder="Kullanıcı Adı" class="w-full p-4 mb-4 border rounded-2xl outline-none focus:ring-2 focus:ring-indigo-500 bg-slate-50">
             <input type="password" id="password" placeholder="Şifre" class="w-full p-4 mb-8 border rounded-2xl outline-none focus:ring-2 focus:ring-indigo-500 bg-slate-50">
-            <button onclick="handleAuth()" id="auth-btn" class="w-full bg-indigo-600 text-white py-4 rounded-2xl font-bold hover:bg-indigo-700 transition shadow-lg hover:shadow-indigo-500/30">Giriş Yap</button>
+            <button onclick="handleAuth()" id="auth-btn" class="w-full bg-indigo-600 text-white py-4 rounded-2xl font-bold hover:bg-indigo-700 transition shadow-lg">Giriş Yap</button>
             <p class="text-center mt-6 text-slate-500 text-sm font-semibold">Hesabın yok mu? <a href="#" onclick="toggleAuthMode()" class="text-indigo-600 font-bold hover:underline">Kayıt Ol</a></p>
         </div>
 
         <div id="main-content" class="hidden">
-            <div class="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
-                <h2 class="text-3xl font-extrabold text-slate-800">Vitrin</h2>
-                <span class="text-sm bg-slate-200 px-3 py-1 rounded-full text-slate-600 font-bold">♻️ Sürdürülebilir Gelecek</span>
+            <div class="bg-white p-4 rounded-3xl shadow-sm mb-8 flex flex-col md:flex-row gap-3 items-center border border-slate-200">
+                <input type="text" id="searchInput" placeholder="İlanlarda ara..." class="w-full md:flex-1 p-3 border rounded-2xl outline-none focus:ring-2 focus:ring-indigo-500 bg-slate-50">
+                <select id="filterCity" class="w-full md:w-auto p-3 border rounded-2xl outline-none bg-white cursor-pointer font-semibold text-slate-600"><option value="">🌍 Tüm Şehirler</option></select>
+                <select id="filterSize" class="w-full md:w-auto p-3 border rounded-2xl outline-none bg-white cursor-pointer font-semibold text-slate-600"><option value="">Tüm Bedenler</option><option value="S">S</option><option value="M">M</option><option value="L">L</option><option value="XL">XL</option></select>
+                <select id="filterType" class="w-full md:w-auto p-3 border rounded-2xl outline-none bg-white cursor-pointer font-semibold text-slate-600"><option value="">Tümü</option><option value="takas">🔄 Takaslık</option><option value="bagis">🎁 Bağışlık</option></select>
+                <button onclick="urunleriGetir()" class="w-full md:w-auto bg-indigo-600 text-white px-8 py-3 rounded-2xl font-bold hover:bg-indigo-700 transition">Filtrele</button>
             </div>
             <div id="grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8"></div>
         </div>
     </main>
 
-    <div id="modal" class="fixed inset-0 bg-slate-900/60 hidden flex items-center justify-center p-4 z-[60] backdrop-blur-md">
-        <div class="bg-white p-8 rounded-3xl w-full max-w-lg shadow-2xl">
-            <h2 class="text-2xl font-bold mb-6 text-slate-800 flex items-center gap-2">✨ Yeni İlan</h2>
-            <input type="text" id="baslik" placeholder="Ürün Başlığı" class="w-full p-4 mb-4 border rounded-2xl outline-none focus:ring-2 focus:ring-indigo-500">
-            
-            <div class="flex gap-4 mb-6">
-                <select id="beden" class="flex-1 p-4 border rounded-2xl outline-none bg-white cursor-pointer">
-                    <option value="S">Beden: S</option><option value="M">Beden: M</option><option value="L">Beden: L</option><option value="XL">Beden: XL</option>
-                </select>
-                <select id="type" class="flex-1 p-4 border rounded-2xl outline-none bg-white font-bold cursor-pointer">
-                    <option value="takas">🔄 Takaslık</option>
-                    <option value="bagis">🎁 Bağışlık</option>
-                </select>
-            </div>
-            
-            <label class="block mb-2 text-xs font-bold text-slate-400 uppercase tracking-widest">Fotoğraf (Opsiyonel)</label>
-            <input type="file" id="fileInput" class="mb-8 block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 cursor-pointer">
-            
-            <button onclick="urunKaydet()" class="w-full bg-indigo-600 text-white py-4 rounded-2xl font-bold shadow-lg hover:bg-indigo-700 transition">Yayınla</button>
-            <button onclick="toggleModal()" class="w-full mt-3 text-slate-400 text-sm font-semibold hover:text-slate-600">Vazgeç</button>
+    <div id="inbox-modal" class="fixed inset-0 bg-slate-900/60 hidden flex items-center justify-center p-4 z-[55] backdrop-blur-md">
+        <div class="bg-white p-8 rounded-3xl w-full max-w-md shadow-2xl">
+            <h2 class="text-2xl font-bold mb-6 flex items-center gap-2 text-indigo-700">💬 Mesajlarım</h2>
+            <div id="conversations-list" class="space-y-3 max-h-96 overflow-y-auto pr-2 custom-scrollbar"></div>
+            <button onclick="toggleInbox()" class="w-full mt-6 py-4 bg-slate-100 rounded-2xl font-bold text-slate-600 hover:bg-slate-200">Kapat</button>
         </div>
     </div>
 
-    <div id="mailbox-modal" class="fixed inset-0 bg-slate-900/60 hidden flex items-center justify-center p-4 z-[60] backdrop-blur-md">
+    <div id="mailbox-modal" class="fixed inset-0 bg-slate-900/60 hidden flex items-center justify-center p-4 z-[55] backdrop-blur-md">
         <div class="bg-white p-8 rounded-3xl w-full max-w-md shadow-2xl">
-            <h2 class="text-2xl font-bold mb-6 flex items-center gap-2 text-indigo-700">📬 Mesaj Kutusu</h2>
+            <h2 class="text-2xl font-bold mb-6 flex items-center gap-2 text-indigo-700">📬 İlan Talepleri</h2>
             <div id="offers-list" class="space-y-3 max-h-96 overflow-y-auto pr-2 custom-scrollbar"></div>
             <button onclick="toggleMailbox()" class="w-full mt-6 py-4 bg-slate-100 rounded-2xl font-bold text-slate-600 hover:bg-slate-200">Kapat</button>
+        </div>
+    </div>
+
+    <div id="chat-modal" class="fixed inset-0 bg-slate-900/60 hidden flex items-center justify-center p-4 z-[80] backdrop-blur-md">
+        <div class="bg-white rounded-3xl w-full max-w-md shadow-2xl flex flex-col h-[600px] overflow-hidden">
+            <div class="bg-indigo-600 p-5 text-white flex justify-between items-center"><h3 class="font-extrabold text-lg" id="chat-title"></h3><button onclick="closeChat()" class="text-sm font-bold">Kapat</button></div>
+            <div id="chat-box" class="flex-1 p-4 overflow-y-auto bg-slate-50 flex flex-col gap-3"></div>
+            <div class="p-4 bg-white border-t flex gap-2">
+                <input type="text" id="chat-input" placeholder="Mesaj yaz..." class="flex-1 p-4 border rounded-2xl outline-none bg-slate-50" onkeypress="if(event.key === 'Enter') sendMessage()">
+                <button onclick="sendMessage()" class="bg-indigo-600 text-white px-6 rounded-2xl font-bold">Gönder</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="product-detail-modal" class="fixed inset-0 bg-slate-900/60 hidden flex items-center justify-center p-4 z-[50] backdrop-blur-md">
+        <div class="bg-white p-6 rounded-3xl w-full max-w-3xl shadow-2xl flex flex-col md:flex-row gap-6 relative">
+            <div class="w-full md:w-1/2">
+                <img id="detail-img" src="" class="w-full h-64 md:h-full object-cover rounded-2xl border border-slate-100">
+            </div>
+            <div class="w-full md:w-1/2 flex flex-col justify-between">
+                <div>
+                    <div class="flex justify-between items-start mb-2">
+                        <h2 id="detail-title" class="text-2xl font-extrabold text-slate-800"></h2>
+                        <span id="detail-type" class="px-3 py-1 rounded-full text-[10px] font-black shadow-sm uppercase tracking-wider text-white"></span>
+                    </div>
+                    <p id="detail-owner" class="text-xs font-bold text-slate-400 mb-4 uppercase tracking-widest"></p>
+                    
+                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-100 mb-4">
+                        <h4 class="text-xs font-bold text-slate-400 mb-2 uppercase">İlan Detayı</h4>
+                        <p id="detail-desc" class="text-slate-700 text-sm leading-relaxed whitespace-pre-wrap"></p>
+                    </div>
+
+                    <div class="flex gap-2 mb-6">
+                        <span class="bg-indigo-50 text-indigo-700 font-bold px-3 py-1 rounded-lg text-sm">Beden: <span id="detail-size"></span></span>
+                        <span class="bg-slate-100 text-slate-600 font-bold px-3 py-1 rounded-lg text-sm flex items-center gap-1">📍 <span id="detail-city"></span></span>
+                    </div>
+                </div>
+                
+                <div id="detail-actions" class="flex gap-2 mt-auto"></div>
+                <button onclick="closeDetailModal()" class="w-full mt-3 text-slate-400 text-sm font-semibold hover:text-slate-600">Kapat</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal" class="fixed inset-0 bg-slate-900/60 hidden flex items-center justify-center p-4 z-[60] backdrop-blur-md">
+        <div class="bg-white p-8 rounded-3xl w-full max-w-lg shadow-2xl">
+            <h2 class="text-2xl font-bold mb-6">✨ Yeni İlan</h2>
+            <input type="text" id="baslik" placeholder="Başlık" class="w-full p-4 mb-4 border rounded-2xl"><textarea id="aciklama" placeholder="Detay" class="w-full p-4 mb-4 border rounded-2xl"></textarea>
+            <select id="sehir" class="w-full p-4 mb-4 border rounded-2xl"></select>
+            <div class="flex gap-4 mb-6"><select id="beden" class="flex-1 p-4 border rounded-2xl"><option value="S">S</option><option value="M">M</option><option value="L">L</option><option value="XL">XL</option></select><select id="type" class="flex-1 p-4 border rounded-2xl"><option value="takas">🔄 Takas</option><option value="bagis">🎁 Bağış</option></select></div>
+            <input type="file" id="fileInput" class="mb-8 block w-full text-sm text-slate-500"><button onclick="urunKaydet()" class="w-full bg-indigo-600 text-white py-4 rounded-2xl font-bold">Yayınla</button>
+            <button onclick="toggleModal()" class="w-full mt-3 text-slate-400 text-sm font-semibold hover:text-slate-600">Vazgeç</button>
         </div>
     </div>
 
     <script>
         let currentUser = null;
         let isLoginMode = true;
+        let allProducts = [];
+        let currentChatUserId = null;
+        let chatInterval = null;
+        let notificationInterval = null; // Bildirim kontrolü için
 
         window.onload = () => {
             const savedUser = localStorage.getItem('user');
@@ -82,110 +126,198 @@
                 renderNav();
                 urunleriGetir();
                 checkOffers();
-            } else {
-                document.getElementById('auth-screen').classList.remove('hidden');
-            }
+                checkUnreadMessages(); // İlk yüklemede mesaj kontrolü yap
+                
+                // Arka planda her 3 saniyede bir okunmamış mesaj var mı diye kontrol et
+                notificationInterval = setInterval(checkUnreadMessages, 3000);
+            } else { document.getElementById('auth-screen').classList.remove('hidden'); }
+            sehirleriYukle();
         };
 
         function renderNav() {
             document.getElementById('nav-right').innerHTML = `
-                <div class="relative cursor-pointer hover:scale-110 transition p-2 group" onclick="toggleMailbox()">
-                    <svg class="text-indigo-100 group-hover:text-white" width="28" height="28" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><path d="M22 6l-10 7L2 6"/></svg>
+                <button onclick="toggleInbox()" class="p-2 text-indigo-100 hover:text-white transition relative group">
+                    <svg width="28" height="28" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+                    <span id="msg-notif-dot" class="absolute top-1 right-1 h-3.5 w-3.5 bg-red-500 rounded-full border-2 border-indigo-700 hidden animate-pulse"></span>
+                </button>
+                <button onclick="toggleMailbox()" class="p-2 text-indigo-100 hover:text-white transition relative">
+                    <svg width="28" height="28" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><path d="M22 6l-10 7L2 6"/></svg>
                     <span id="notif-dot" class="absolute top-1 right-1 h-3.5 w-3.5 bg-red-500 rounded-full border-2 border-indigo-700 hidden animate-pulse"></span>
-                </div>
-                <button onclick="toggleModal()" class="bg-white text-indigo-700 px-6 py-2 rounded-2xl font-extrabold text-xs tracking-widest hover:shadow-lg transition transform hover:-translate-y-0.5">İLAN VER</button>
-                <button onclick="logout()" class="text-indigo-300 hover:text-white transition ml-2"><svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg></button>
+                </button>
+                <button onclick="toggleModal()" class="bg-white text-indigo-700 px-6 py-2 rounded-2xl font-bold text-xs">İLAN VER</button>
+                <button onclick="logout()" class="text-indigo-300 ml-2">Çıkış</button>
             `;
+        }
+
+        // --- YENİ: OKUNMAMIŞ MESAJ KONTROLÜ ---
+        async function checkUnreadMessages() {
+            if (!currentUser) return;
+            const res = await fetch(`/api/messages/unread/${currentUser.id}`);
+            const data = await res.json();
+            const dot = document.getElementById('msg-notif-dot');
+            if (dot) {
+                if(data.unread > 0) dot.classList.remove('hidden');
+                else dot.classList.add('hidden');
+            }
+        }
+
+        async function toggleInbox() {
+            const modal = document.getElementById('inbox-modal');
+            modal.classList.toggle('hidden');
+            if(!modal.classList.contains('hidden')) {
+                const res = await fetch(`/api/conversations/${currentUser.id}`);
+                const data = await res.json();
+                document.getElementById('conversations-list').innerHTML = data.length ? data.map(c => `
+                    <div onclick="openChat(${c.contact_id}, '${c.contact_name}')" class="p-4 rounded-2xl border border-slate-100 bg-slate-50 hover:bg-indigo-50 cursor-pointer transition">
+                        <div class="flex justify-between items-center mb-1">
+                            <span class="font-extrabold text-slate-800">@${c.contact_name}</span>
+                            <span class="text-[10px] text-slate-400">${new Date(c.timestamp).toLocaleDateString()}</span>
+                        </div>
+                        <p class="text-xs text-slate-500 truncate italic">"${c.last_message}"</p>
+                    </div>`).join('') : "<p class='text-center py-10 opacity-50'>Henüz mesajlaşman yok.</p>";
+            }
+        }
+
+        function openChat(contactId, contactName) {
+            document.getElementById('inbox-modal').classList.add('hidden');
+            document.getElementById('mailbox-modal').classList.add('hidden');
+            document.getElementById('product-detail-modal').classList.add('hidden');
+            currentChatUserId = contactId;
+            document.getElementById('chat-title').innerText = `@${contactName}`;
+            document.getElementById('chat-modal').classList.remove('hidden');
+            loadMessages();
+            chatInterval = setInterval(loadMessages, 2000);
+            
+            // Sohbeti açınca bildirimi gizle
+            setTimeout(checkUnreadMessages, 500);
+        }
+
+        function closeChat() { document.getElementById('chat-modal').classList.add('hidden'); clearInterval(chatInterval); currentChatUserId = null; }
+
+        async function loadMessages() {
+            if (!currentChatUserId) return;
+            const res = await fetch(`/api/messages/${currentUser.id}/${currentChatUserId}`);
+            const messages = await res.json();
+            const chatBox = document.getElementById('chat-box');
+            const isScrolledToBottom = chatBox.scrollHeight - chatBox.clientHeight <= chatBox.scrollTop + 50;
+
+            chatBox.innerHTML = messages.map(m => `
+                <div class="flex flex-col ${m.sender_id === currentUser.id ? 'items-end' : 'items-start'}">
+                    <div class="${m.sender_id === currentUser.id ? 'bg-indigo-600 text-white rounded-l-2xl rounded-tr-2xl' : 'bg-white border text-slate-800 rounded-r-2xl rounded-tl-2xl'} px-4 py-2 max-w-[80%] shadow-sm text-sm">
+                        ${m.content}
+                    </div>
+                </div>`).join('');
+            
+            if (isScrolledToBottom || messages.length <= 10) chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        async function sendMessage() {
+            const input = document.getElementById('chat-input');
+            const content = input.value.trim();
+            if (!content || !currentChatUserId) return;
+            input.value = '';
+            await fetch('/api/messages', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ sender_id: currentUser.id, receiver_id: currentChatUserId, content }) });
+            loadMessages();
+            setTimeout(() => { document.getElementById('chat-box').scrollTop = document.getElementById('chat-box').scrollHeight; }, 100);
         }
 
         async function handleAuth() {
             const u = document.getElementById('username').value;
             const p = document.getElementById('password').value;
-            const res = await fetch(isLoginMode ? '/api/login' : '/api/register', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ username: u, password: p })
-            });
+            const res = await fetch(isLoginMode ? '/api/login' : '/api/register', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ username: u, password: p }) });
             if (res.ok) {
-                if(isLoginMode) {
-                    currentUser = await res.json();
-                    localStorage.setItem('user', JSON.stringify(currentUser));
-                    location.reload();
-                } else { alert("Kayıt başarılı! Giriş yapabilirsiniz."); toggleAuthMode(); }
-            } else alert("İşlem başarısız. Bilgileri kontrol edin.");
+                if(isLoginMode) { currentUser = await res.json(); localStorage.setItem('user', JSON.stringify(currentUser)); location.reload(); }
+                else { alert("Kayıt başarılı!"); toggleAuthMode(); }
+            } else alert("Hata!");
         }
 
         async function urunleriGetir() {
-            const res = await fetch('/api/products');
-            const data = await res.json();
-            document.getElementById('grid').innerHTML = data.map(u => {
-                const isMine = u.user_id === currentUser.id;
-                const isAdmin = currentUser.role === 'admin';
+            const queryParams = new URLSearchParams({ search: document.getElementById('searchInput').value, city: document.getElementById('filterCity').value, size: document.getElementById('filterSize').value, type: document.getElementById('filterType').value }).toString();
+            const res = await fetch(`/api/products?${queryParams}`);
+            allProducts = await res.json();
+            document.getElementById('grid').innerHTML = allProducts.map(u => {
                 const isBagis = u.type === 'bagis';
-                
+                const isMine = u.user_id === currentUser.id;
                 return `
-                <div class="bg-white rounded-[2rem] overflow-hidden shadow-sm hover:shadow-2xl transition-all duration-500 border border-slate-100 group relative">
-                    <div class="relative overflow-hidden h-64 bg-gray-100">
-                        <img src="${u.img_url}" class="h-full w-full object-cover group-hover:scale-110 transition duration-700" onerror="this.src='https://images.unsplash.com/photo-1523381210434-271e8be1f52b?w=500'">
-                        <div class="absolute top-4 left-4 ${isBagis ? 'bg-green-500' : 'bg-indigo-600'} text-white px-3 py-1 rounded-full text-[10px] font-black shadow-lg uppercase tracking-wider">
-                            ${isBagis ? '🎁 BAĞIŞ' : u.size}
-                        </div>
+                <div onclick="openDetailModal(${u.id})" class="bg-white rounded-[2rem] overflow-hidden shadow-sm hover:shadow-2xl transition-all duration-300 border border-slate-100 group relative cursor-pointer transform hover:-translate-y-1 isolate">
+                    <div class="relative overflow-hidden h-64 bg-gray-100 rounded-t-[2rem] [transform:translateZ(0)]">
+                        <img src="${u.img_url}" class="h-full w-full object-cover group-hover:scale-105 transition-transform duration-500" onerror="this.src='https://images.unsplash.com/photo-1523381210434-271e8be1f52b?w=500'">
+                        <div class="absolute top-4 left-4 ${isBagis ? 'bg-green-500' : 'bg-indigo-600'} text-white px-3 py-1 rounded-full text-[10px] font-black shadow-lg uppercase tracking-wider">${isBagis ? '🎁 BAĞIŞ' : u.size}</div>
+                        <div class="absolute bottom-4 left-4 bg-slate-900/80 backdrop-blur-sm text-white px-2 py-1 rounded-lg text-[10px] font-bold tracking-wide">📍 ${u.city || 'Belirtilmedi'}</div>
                         ${isMine ? '<div class="absolute top-4 right-4 bg-white/90 px-2 py-1 rounded-lg text-[10px] font-bold text-slate-600">Senin İlanın</div>' : ''}
                     </div>
-                    <div class="p-6">
-                        <h3 class="font-bold text-slate-800 text-lg mb-1 truncate">${u.title}</h3>
-                        <p class="text-slate-400 text-[10px] mb-6 uppercase tracking-widest font-bold">@${u.username}</p>
-                        <div class="flex gap-2">
-                            ${isMine 
-                                ? `<button onclick="ilanSil(${u.id})" class="flex-1 bg-red-50 text-red-500 py-3 rounded-2xl font-bold text-[10px] uppercase hover:bg-red-500 hover:text-white transition">İlanımı Kaldır</button>`
-                                : `<button onclick="takasIste(${u.id}, ${u.user_id})" class="flex-1 ${isBagis ? 'bg-green-600 hover:bg-green-700' : 'bg-indigo-600 hover:bg-indigo-700'} text-white py-3 rounded-2xl font-bold text-[10px] transition uppercase shadow-md hover:shadow-lg">
-                                    ${isBagis ? '🎁 Talep Et' : '🔄 Takas İste'}
-                                   </button>`
-                            }
-                            ${(isAdmin && !isMine) ? `<button onclick="ilanSil(${u.id})" class="bg-slate-800 text-white px-4 rounded-2xl font-bold text-xs hover:bg-black" title="Admin Sil">🗑️</button>` : ''}
-                        </div>
+                    <div class="p-5 flex justify-between items-center">
+                        <div class="w-full"><h3 class="font-bold text-slate-800 text-lg mb-1 truncate">${u.title}</h3><p class="text-slate-400 text-[10px] uppercase tracking-widest font-bold">@${u.username}</p></div>
+                        <div class="bg-slate-50 p-2 rounded-xl text-slate-400 group-hover:text-indigo-600 transition"><svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"></path></svg></div>
                     </div>
                 </div>`;
             }).join('');
         }
 
+        function openDetailModal(id) {
+            const u = allProducts.find(p => p.id === id);
+            const isMine = u.user_id === currentUser.id;
+            const isAdmin = currentUser.role === 'admin';
+            const isBagis = u.type === 'bagis';
+
+            document.getElementById('detail-img').src = u.img_url;
+            document.getElementById('detail-title').innerText = u.title;
+            document.getElementById('detail-owner').innerText = 'İlan Sahibi: @' + u.username;
+            document.getElementById('detail-size').innerText = u.size;
+            document.getElementById('detail-city').innerText = u.city || 'Belirtilmedi';
+            document.getElementById('detail-desc').innerText = u.description ? u.description : 'Açıklama yok.';
+
+            const typeBadge = document.getElementById('detail-type');
+            typeBadge.innerText = isBagis ? '🎁 BAĞIŞLIK' : '🔄 TAKASLIK';
+            typeBadge.className = `px-3 py-1 rounded-full text-[10px] font-black shadow-sm uppercase tracking-wider text-white ${isBagis ? 'bg-green-500' : 'bg-indigo-600'}`;
+
+            let actionHtml = '';
+            if (isMine) {
+                actionHtml = `<button onclick="ilanSil(${u.id})" class="flex-1 bg-red-50 text-red-500 py-3 rounded-2xl font-bold text-sm uppercase hover:bg-red-500 hover:text-white transition">İlanımı Kaldır</button>`;
+            } else {
+                actionHtml = `
+                    <button onclick="takasIste(${u.id}, ${u.user_id})" class="flex-1 ${isBagis ? 'bg-green-600 hover:bg-green-700' : 'bg-indigo-600 hover:bg-indigo-700'} text-white py-3 rounded-2xl font-bold text-sm transition shadow-lg transform hover:-translate-y-1">
+                        ${isBagis ? '🎁 TALEP ET' : '🔄 TAKAS TEKLİFİ'}
+                    </button>
+                    <button onclick="openChat(${u.user_id}, '${u.username}')" class="flex-1 bg-slate-100 text-slate-700 py-3 rounded-2xl font-bold text-sm hover:bg-slate-200 transition">
+                        💬 İLETİŞİME GEÇ
+                    </button>`;
+            }
+            if (isAdmin && !isMine) { actionHtml += `<button onclick="ilanSil(${u.id})" class="bg-slate-800 text-white px-5 rounded-2xl font-bold text-sm hover:bg-black">🗑️</button>`; }
+
+            document.getElementById('detail-actions').innerHTML = actionHtml;
+            document.getElementById('product-detail-modal').classList.remove('hidden');
+        }
+
+        function closeDetailModal() { document.getElementById('product-detail-modal').classList.add('hidden'); }
         async function urunKaydet() {
             const fileInput = document.getElementById('fileInput');
             let finalImgUrl = "";
             if (fileInput.files[0]) {
-                const formData = new FormData();
-                formData.append('image', fileInput.files[0]);
+                const formData = new FormData(); formData.append('image', fileInput.files[0]);
                 const upRes = await fetch('/api/upload', { method: 'POST', body: formData });
-                const upData = await upRes.json();
-                finalImgUrl = upData.filePath;
+                const upData = await upRes.json(); finalImgUrl = upData.filePath;
             }
-            await fetch('/api/products', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ 
-                    user_id: currentUser.id, 
-                    title: document.getElementById('baslik').value, 
-                    size: document.getElementById('beden').value, 
-                    img_url: finalImgUrl, 
-                    type: document.getElementById('type').value 
-                })
-            });
+            await fetch('/api/products', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ user_id: currentUser.id, title: document.getElementById('baslik').value, description: document.getElementById('aciklama').value, size: document.getElementById('beden').value, city: document.getElementById('sehir').value, img_url: finalImgUrl, type: document.getElementById('type').value }) });
             location.reload();
         }
 
         async function ilanSil(id) {
-            if(!confirm("İlanı silmek istediğine emin misin?")) return;
-            const res = await fetch(`/api/products/${id}`, {
-                method: 'DELETE',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ user_id: currentUser.id })
-            });
-            if(res.ok) location.reload(); else alert("Silme yetkiniz yok!");
+            if(!confirm("Emin misin?")) return;
+            const res = await fetch(`/api/products/${id}`, { method: 'DELETE', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ user_id: currentUser.id }) });
+            if(res.ok) location.reload(); else alert("Yetkiniz yok!");
         }
 
         async function takasIste(pId, rId) {
             await fetch('/api/offers', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ product_id: pId, sender_id: currentUser.id, receiver_id: rId }) });
-            alert("İsteğin sahibine iletildi!");
+            alert("Harika! İsteğin ürün sahibine iletildi.");
+            closeDetailModal();
+        }
+
+        function sehirleriYukle() {
+            const sehirler = ["Adana", "Adıyaman", "Afyonkarahisar", "Ağrı", "Aksaray", "Amasya", "Ankara", "Antalya", "Ardahan", "Artvin", "Aydın", "Balıkesir", "Bartın", "Batman", "Bayburt", "Bilecik", "Bingöl", "Bitlis", "Bolu", "Burdur", "Bursa", "Çanakkale", "Çankırı", "Çorum", "Denizli", "Diyarbakır", "Düzce", "Edirne", "Elazığ", "Erzincan", "Erzurum", "Eskişehir", "Gaziantep", "Giresun", "Gümüşhane", "Hakkâri", "Hatay", "Iğdır", "Isparta", "İstanbul", "İzmir", "Kahramanmaraş", "Karabük", "Karaman", "Kars", "Kastamonu", "Kayseri", "Kilis", "Kırıkkale", "Kırklareli", "Kırşehir", "Kocaeli", "Konya", "Kütahya", "Malatya", "Manisa", "Mardin", "Mersin", "Muğla", "Muş", "Nevşehir", "Niğde", "Ordu", "Osmaniye", "Rize", "Sakarya", "Samsun", "Şanlıurfa", "Siirt", "Sinop", "Şırnak", "Sivas", "Tekirdağ", "Tokat", "Trabzon", "Tunceli", "Uşak", "Van", "Yalova", "Yozgat", "Zonguldak"];
+            const filterCity = document.getElementById('filterCity'); const sehirSelect = document.getElementById('sehir');
+            sehirler.forEach(sehir => { filterCity.add(new Option(sehir, sehir)); sehirSelect.add(new Option(`Konum: ${sehir}`, sehir, false, sehir === "Ankara")); });
         }
 
         async function toggleMailbox() {
@@ -194,29 +326,22 @@
             if(!modal.classList.contains('hidden')) {
                 const res = await fetch(`/api/offers/${currentUser.id}`);
                 const data = await res.json();
-                document.getElementById('offers-list').innerHTML = data.length ? data.map(o => `
-                    <div class="p-4 rounded-2xl border ${o.product_type === 'bagis' ? 'border-green-200 bg-green-50' : 'border-indigo-100 bg-indigo-50'} transition hover:scale-[1.02]">
-                        <p class="text-[10px] font-black ${o.product_type === 'bagis' ? 'text-green-600' : 'text-indigo-600'} uppercase mb-1 flex items-center gap-1">
-                            ${o.product_type === 'bagis' ? '🎁 BAĞIŞ TALEBİ' : '🔄 TAKAS İSTEĞİ'}
-                        </p>
-                        <p class="text-xs text-slate-700 leading-relaxed">
-                            <span class="font-bold text-slate-900">@${o.sender_name}</span> kullanıcısı, 
-                            "<span class="italic">${o.product_name}</span>" ilanına talip oldu.
-                        </p>
-                    </div>
-                `).join('') : "<div class='flex flex-col items-center justify-center py-10 opacity-50'><span class='text-4xl'>📭</span><p class='text-sm mt-2'>Kutun boş.</p></div>";
-                document.getElementById('notif-dot').classList.add('hidden');
+                document.getElementById('offers-list').innerHTML = data.length ? data.map(o => `<div class="p-4 rounded-2xl border bg-slate-50"><p class="text-xs">@${o.sender_name}, "${o.product_name}" ilanına talip.</p><button onclick="openChat(${o.sender_id}, '${o.sender_name}')" class="text-indigo-600 text-xs font-bold mt-2">Mesaj At</button></div>`).join('') : "<p class='text-center'>Talep yok.</p>";
             }
         }
 
         async function checkOffers() {
             const res = await fetch(`/api/offers/${currentUser.id}`);
             const data = await res.json();
-            if(data.length > 0) document.getElementById('notif-dot').classList.remove('hidden');
+            const dot = document.getElementById('notif-dot');
+            if(dot) {
+                if(data.length > 0) dot.classList.remove('hidden');
+                else dot.classList.add('hidden');
+            }
         }
 
         function logout() { localStorage.removeItem('user'); location.reload(); }
-        function toggleAuthMode() { isLoginMode = !isLoginMode; document.getElementById('auth-title').innerText = isLoginMode ? "Giriş Yap" : "Kayıt Ol"; document.getElementById('auth-btn').innerText = isLoginMode ? "Giriş Yap" : "Kayıt Ol"; }
+        function toggleAuthMode() { isLoginMode = !isLoginMode; document.getElementById('auth-title').innerText = isLoginMode ? "Hoş Geldiniz" : "Kayıt Ol"; }
         function toggleModal() { document.getElementById('modal').classList.toggle('hidden'); }
     </script>
 </body>
